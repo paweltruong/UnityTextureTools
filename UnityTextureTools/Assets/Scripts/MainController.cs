@@ -16,6 +16,8 @@ public class MainController : MonoBehaviour
     bool _captureCoords = false;
     [Header("GetPixel")]
     [SerializeField] TMP_InputField _previewPixelX;
+    [SerializeField] TMP_InputField _inpComplexString;
+    [SerializeField] Button _btnTryParseComplexString;
     [SerializeField] Image _pixelColor;
     [SerializeField] TextMeshProUGUI _pixelColorInfo;
     [SerializeField] TMP_InputField _previewPixelY;
@@ -32,9 +34,11 @@ public class MainController : MonoBehaviour
 
         //GetPixel
         Assert.IsNotNull(_previewPixelX);
+        Assert.IsNotNull(_previewPixelY);
+        Assert.IsNotNull(_inpComplexString);
+        Assert.IsNotNull(_btnTryParseComplexString);
         Assert.IsNotNull(_pixelColor);
         Assert.IsNotNull(_pixelColorInfo);
-        Assert.IsNotNull(_previewPixelY);
         Assert.IsNotNull(_btnSampleColor);
     }
 
@@ -46,6 +50,7 @@ public class MainController : MonoBehaviour
 
         _btnLoad.onClick.AddListener(BtnLoad_Click);
 
+        _btnTryParseComplexString.onClick.AddListener(BtnTryParseComplexString_Click);
         _btnSampleColor.onClick.AddListener(BtnSampleColor_Click);
     }
 
@@ -71,6 +76,87 @@ public class MainController : MonoBehaviour
         else
         {
             Debug.Log($"Could not load {filePath}");
+        }
+    }
+
+    void BtnTryParseComplexString_Click()
+    {
+
+        if (!string.IsNullOrEmpty(_inpComplexString.text))
+        {
+            int x, y;
+            bool successs = false;
+
+            //First method
+            if (TryParse1(_inpComplexString.text, out x, out y))
+            {
+                successs = true;
+                Debug.Log("Adv Parse 1 Success");
+            }
+
+            if (successs)
+            {
+                _previewPixelX.text = x.ToString();
+                _previewPixelY.text = y.ToString();
+                var pixel = (_imgPreview.texture as Texture2D).GetPixel(x, y);
+                UpdateSampleColorUI(pixel);
+            }
+        }
+    }
+
+    bool TryParse1(string input, out int x, out int y)
+    {
+        x = 0;
+        y = 0;
+
+        var tmp = input.Trim();
+        if (!tmp.StartsWith("xy=(") && tmp.Length > 4) return false;
+
+
+        var xString = GetFloatString(tmp.Substring(4));
+        if (string.IsNullOrEmpty(xString)) return false;
+
+        var secondPart = tmp.Substring(4 + xString.Length + 1/*excpect separtor ,*/);
+        var yString = GetFloatString(secondPart);
+
+        if(string.IsNullOrEmpty(yString)) return false;
+
+        if (!float.TryParse(xString, out float xFloat) || !float.TryParse(yString, out float yFloat)) return false;
+
+        x = Mathf.FloorToInt(xFloat);
+        y = Mathf.FloorToInt(yFloat);
+
+        return true;
+    }
+
+    /// <summary>
+    /// f.e from string "7958.354,4960.325)" returns "7958.354"
+    /// </summary>
+    /// <param name="text"></param>
+    /// <returns></returns>
+    string GetFloatString(string text)
+    {
+        string[] startStrings = new string[] { "(" };
+        string[] endStrings = new string[] { ",", ")", " " };
+
+        int foundIndex = -1;
+        for (int i = 0; i < text.Length; ++i)
+        {
+            if (endStrings.Any(s => s == text.Substring(i, 1)))
+            {
+                foundIndex = i;
+                break;
+            }
+        }
+
+        if (foundIndex >= 0)
+        {
+            var floatString = text.Substring(0, foundIndex);
+            return floatString;
+        }
+        else
+        {
+            return string.Empty;
         }
     }
 
