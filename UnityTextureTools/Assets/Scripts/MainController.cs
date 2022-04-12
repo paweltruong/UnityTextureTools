@@ -10,8 +10,10 @@ public class MainController : MonoBehaviour
 {
     [Header("Preview")]
     [SerializeField] RawImage _imgPreview;
+    [SerializeField] TextMeshProUGUI _txtCurrentCoords;
     [SerializeField] TMP_InputField _previewFilePath;
     [SerializeField] Button _btnLoad;
+    bool _captureCoords = false;
     [Header("GetPixel")]
     [SerializeField] TMP_InputField _previewPixelX;
     [SerializeField] Image _pixelColor;
@@ -24,6 +26,7 @@ public class MainController : MonoBehaviour
     {
         //Preview
         Assert.IsNotNull(_imgPreview);
+        Assert.IsNotNull(_txtCurrentCoords);
         Assert.IsNotNull(_previewFilePath);
         Assert.IsNotNull(_btnLoad);
 
@@ -39,9 +42,19 @@ public class MainController : MonoBehaviour
     {
         InitialAsserts();
 
+        _txtCurrentCoords.text = string.Empty;
+
         _btnLoad.onClick.AddListener(BtnLoad_Click);
 
         _btnSampleColor.onClick.AddListener(BtnSampleColor_Click);
+    }
+
+    private void Update()
+    {
+        if (_captureCoords)
+        {
+            UpdateMouseCoords();
+        }
     }
 
     void BtnLoad_Click()
@@ -101,6 +114,20 @@ public class MainController : MonoBehaviour
             return;
         }
 
+        var clickedPixelPosition = MouseToPixelPreviewPosition();
+        var pixelX = Mathf.FloorToInt(clickedPixelPosition.x);
+        var pixelY = Mathf.FloorToInt(clickedPixelPosition.y);
+        _previewPixelX.text = pixelX.ToString();
+        _previewPixelY.text = pixelY.ToString();
+
+        var pixel = (_imgPreview.texture as Texture2D).GetPixel(pixelX, pixelY);
+        UpdateSampleColorUI(pixel);
+
+        //Debug.Log($"SampleTexturePositionWithCursor SelObj:{baseEventData.selectedObject} , Corners: {string.Join(",", corners)}, Module:{baseEventData.currentInputModule}");
+    }
+
+    Vector2 MouseToPixelPreviewPosition()
+    {
         Vector3[] corners = new Vector3[4];
         _imgPreview.rectTransform.GetWorldCorners(corners);
 
@@ -121,15 +148,26 @@ public class MainController : MonoBehaviour
         var mouseToTextureCoordY = yScale * mouseToImageCoordY;
 
         var clickedPixelPosition = new Vector2(mouseToTextureCoordX, mouseToTextureCoordY);
-        var pixelX = Mathf.FloorToInt(mouseToTextureCoordX);
-        var pixelY = Mathf.FloorToInt(mouseToTextureCoordY);
-        _previewPixelX.text = pixelX.ToString();
-        _previewPixelY.text = pixelY.ToString();
+        return clickedPixelPosition;
+    }
 
-        var pixel = (_imgPreview.texture as Texture2D).GetPixel(pixelX, pixelY);
-        UpdateSampleColorUI(pixel);
+    public void UpdateMouseCoords()
+    {
+        var clickedPixelPosition = MouseToPixelPreviewPosition();
+        var pixelX = Mathf.FloorToInt(clickedPixelPosition.x);
+        var pixelY = Mathf.FloorToInt(clickedPixelPosition.y);
+        _txtCurrentCoords.text = $"({pixelX},{pixelY})";
+    }
 
-        //Debug.Log($"SampleTexturePositionWithCursor SelObj:{baseEventData.selectedObject} , Corners: {string.Join(",", corners)}, Module:{baseEventData.currentInputModule}");
+    public void StartCaptureCoords(BaseEventData baseEventData)
+    {
+        _captureCoords = true;
+        _txtCurrentCoords.text = string.Empty;
+    }
+    public void StopCaptureCoords(BaseEventData baseEventData)
+    {
+        _captureCoords = false;
+        _txtCurrentCoords.text = string.Empty;
     }
 
     void UpdateSampleColorUI(Color color)
