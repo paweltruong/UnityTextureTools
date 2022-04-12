@@ -2303,6 +2303,7 @@ MonoBehaviour:
   _pixelColor: {fileID: 889016935}
   _pixelColorInfo: {fileID: 63156516}
   _previewPixelY: {fileID: 2087656005}
+  _btnSampleColor: {fileID: 1062838111}
   _supportedExtensions:
   - .png
 --- !u!4 &1632595776

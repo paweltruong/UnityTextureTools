@@ -17,6 +17,7 @@ public class MainController : MonoBehaviour
     [SerializeField] Image _pixelColor;
     [SerializeField] TextMeshProUGUI _pixelColorInfo;
     [SerializeField] TMP_InputField _previewPixelY;
+    [SerializeField] Button _btnSampleColor;
     [SerializeField] string[] _supportedExtensions = new string[] { ".png" };
 
     void InitialAsserts()
@@ -31,6 +32,7 @@ public class MainController : MonoBehaviour
         Assert.IsNotNull(_pixelColor);
         Assert.IsNotNull(_pixelColorInfo);
         Assert.IsNotNull(_previewPixelY);
+        Assert.IsNotNull(_btnSampleColor);
     }
 
     public void Start()
@@ -38,6 +40,8 @@ public class MainController : MonoBehaviour
         InitialAsserts();
 
         _btnLoad.onClick.AddListener(BtnLoad_Click);
+
+        _btnSampleColor.onClick.AddListener(BtnSampleColor_Click);
     }
 
     void BtnLoad_Click()
@@ -54,6 +58,29 @@ public class MainController : MonoBehaviour
         else
         {
             Debug.Log($"Could not load {filePath}");
+        }
+    }
+
+    void BtnSampleColor_Click()
+    {
+        if (_imgPreview.texture == null
+           && _imgPreview.texture is Texture2D)
+        {
+            Debug.LogError("Invalid texture in preview");
+            return;
+        }
+
+        if (int.TryParse(_previewPixelX.text, out int x)
+            && int.TryParse(_previewPixelY.text, out int y)
+            && x >= 0 && x < _imgPreview.texture.width
+            && y >= 0 && y < _imgPreview.texture.height)
+        {
+            var pixel = (_imgPreview.texture as Texture2D).GetPixel(x, y);
+            UpdateSampleColorUI(pixel);
+        }
+        else
+        {
+            Debug.LogError("Invalid pixel coords");
         }
     }
 
@@ -100,9 +127,15 @@ public class MainController : MonoBehaviour
         _previewPixelY.text = pixelY.ToString();
 
         var pixel = (_imgPreview.texture as Texture2D).GetPixel(pixelX, pixelY);
-        _pixelColor.color = pixel;
-        _pixelColorInfo.text = $"{pixel.ToString()}";
+        UpdateSampleColorUI(pixel);
 
         //Debug.Log($"SampleTexturePositionWithCursor SelObj:{baseEventData.selectedObject} , Corners: {string.Join(",", corners)}, Module:{baseEventData.currentInputModule}");
+    }
+
+    void UpdateSampleColorUI(Color color)
+    {
+        _pixelColor.color = color;
+        _pixelColorInfo.text = $"{color.ToString()}";
+
     }
 }
